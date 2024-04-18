@@ -58,7 +58,7 @@ model Size {
   storeId   String
   store     Store     @relation("StoreToSize", fields: [storeId], references: [id])
   name      String
-  value     String
+  value     String?
   products  Product[]
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
