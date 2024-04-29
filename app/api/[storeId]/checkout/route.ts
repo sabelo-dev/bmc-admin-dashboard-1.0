@@ -1,7 +1,4 @@
-import Stripe from "stripe";
 import { NextResponse } from "next/server";
-
-import { stripe } from "@/lib/stripe";
 import prismadb from "@/lib/prismadb";
 
 const corsHeaders = {
@@ -32,21 +29,10 @@ export async function POST(
     }
   });
 
-  const line_items: Stripe.Checkout.SessionCreateParams.LineItem[] = [];
+  // Assuming you have a function to calculate the total price of products
+  const totalPrice = products.reduce((total, product) => total + product.price, 0);
 
-  products.forEach(product => {
-    line_items.push({
-      quantity: 1,
-      price_data: {
-        currency: "ZAR",
-        product_data: {
-          name: product.name
-        },
-        unit_amount: product.price.toNumber() * 100
-      }
-    });
-  });
-
+  // Create order in Prisma
   const order = await prismadb.order.create({
     data: {
       storeId: params.storeId,
@@ -63,24 +49,18 @@ export async function POST(
     }
   });
 
-  const session = await stripe.checkout.sessions.create({
-    line_items,
-    mode: "payment",
-    billing_address_collection: "required",
-    phone_number_collection: {
-      enabled: true
-    },
-    success_url: `${process.env.FRONTEND_STORE_URL}/cart?success=1`,
-    cancel_url: `${process.env.FRONTEND_STORE_URL}/cart?canceled=1`,
-    metadata: {
-      orderId: order.id
-    }
-  });
+  // Construct response data with the URL to redirect to
+  const responseData = {
+    url: `${process.env.FRONTEND_STORE_URL}/cart?orderId=${order.id}`
+  };
 
-  return NextResponse.json(
-    { url: session.url },
-    {
-      headers: corsHeaders
-    }
-  );
+  const payFastUrl = `https://sandbox.payfast.co.za/eng/process?merchant_id=${process.env.PAYFAST_MERCHANT_ID}
+    &merchant_key=${process.env.PAYFAST_MERCHANT_KEY}
+    &amount=${totalPrice}
+    &item_name=${encodeURIComponent('Order from Your Store')}
+    &return_url=${encodeURIComponent(`${process.env.FRONTEND_STORE_URL}/cart?orderId=${order.id}
+    &success=1`)}&cancel_url=${encodeURIComponent(`${process.env.FRONTEND_STORE_URL}/cart?canceled=1`)}`;
+
+  // Return the response with the URL
+  return NextResponse.json({ url: payFastUrl }, { headers: corsHeaders });
 }
