@@ -58,8 +58,8 @@ export async function POST(
     &merchant_key=${process.env.PAYFAST_MERCHANT_KEY}
     &amount=${totalPrice}
     &item_name=${encodeURIComponent('Order from Your Store')}
-    &return_url=${encodeURIComponent(`${process.env.FRONTEND_STORE_URL}/cart?orderId=${order.id}
-    &success=1`)}&cancel_url=${encodeURIComponent(`${process.env.FRONTEND_STORE_URL}/cart?canceled=1`)}`;
+    &return_url=${encodeURIComponent(`${process.env.FRONTEND_STORE_URL}/cart?orderId=${order.id}&success=1`)}
+    &cancel_url=${encodeURIComponent(`${process.env.FRONTEND_STORE_URL}/cart?canceled=1`)}`;
 
   // Return the response with the URL
   return NextResponse.json({ url: payFastUrl }, { headers: corsHeaders });
