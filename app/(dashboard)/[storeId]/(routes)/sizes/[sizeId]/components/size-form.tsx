@@ -1,5 +1,4 @@
 "use client";
-import { Size } from "@prisma/client";
 import * as z from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -24,12 +23,15 @@ import { Input } from "@/components/ui/input";
 import AlertModal from "@/components/modals/alert-modal";
 
 const formSchema = z.object({
-  name: z.string().min(1),
-  value: z.string().min(1)
+  name: z.string().min(0),
+  value: z.string().min(0)
 });
 
 type SizeFormValues = z.infer<typeof formSchema>;
-
+interface Size {
+  name: string;
+  value: string;
+}
 interface SizeFormProps {
   initialData: Size | null;
 }
