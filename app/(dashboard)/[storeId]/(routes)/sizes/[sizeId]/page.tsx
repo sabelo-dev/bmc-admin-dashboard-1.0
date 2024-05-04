@@ -11,10 +11,19 @@ const SizePage = async ({
       id: params.sizeId
     }
   });
+
+  
+  const sizeData = size
+  ? {
+      name: size.name,
+      value: size.value || "" // Ensure value is not null
+    }
+  : null;
+
   return (
     <div className="flex-col">
       <div className="flex-1 space-y-4 p-8 pt-6">
-        <SizeForm initialData={size} />
+        <SizeForm initialData={sizeData} />
       </div>
     </div>
   );
