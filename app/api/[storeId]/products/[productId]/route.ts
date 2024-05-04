@@ -1,5 +1,5 @@
 import prismadb from "@/lib/prismadb";
-import { auth } from "@clerk/nextjs";
+import { auth } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 
 export async function GET(
@@ -18,8 +18,8 @@ export async function GET(
       include: {
         images: true,
         category: true,
-        size: true,
-        color: true
+        sizes: true,
+        colors: true
       }
     });
 
@@ -46,7 +46,7 @@ export async function PATCH(
       sizeId,
       images,
       isFeatured,
-      isArchieved
+      isArchived
     } = body;
 
     if (!userId) {
@@ -93,13 +93,13 @@ export async function PATCH(
         name,
         price,
         categoryId,
-        colorId,
-        sizeId,
+        colors: {connect: { id: colorId} },
+        sizes: {connect: { id: sizeId } },
         images: {
           deleteMany: {}
         },
         isFeatured,
-        isArchieved
+        isArchived
       }
     });
 
