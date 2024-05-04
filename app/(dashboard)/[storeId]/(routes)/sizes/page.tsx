@@ -17,7 +17,7 @@ const SizesPage = async ({ params }: { params: { storeId: string } }) => {
   const formattedSizes: SizeColumn[] = sizes.map(item => ({
     id: item.id,
     name: item.name,
-    value: item.value,
+    value: item.value ?? "",
     createdAt: format(item.createdAt, "MMMM do,yyyy")
   }));
 
