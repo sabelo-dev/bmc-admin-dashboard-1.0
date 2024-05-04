@@ -1,3 +1,4 @@
+import axios from "axios";
 import { NextResponse } from "next/server";
 import prismadb from "@/lib/prismadb";
 
@@ -29,8 +30,8 @@ export async function POST(
     }
   });
 
-  // Assuming you have a function to calculate the total price of products
-  const totalPrice = products.reduce((total, product) => total + product.price, 0);
+  // Calculate the total price of products
+  const totalPrice = products.reduce((total: number, product) => total + product.price.toNumber(), 0);
 
   // Create order in Prisma
   const order = await prismadb.order.create({
@@ -49,11 +50,7 @@ export async function POST(
     }
   });
 
-  // Construct response data with the URL to redirect to
-  const responseData = {
-    url: `${process.env.FRONTEND_STORE_URL}/cart?orderId=${order.id}`
-  };
-
+  // Generate payment URL
   const payFastUrl = `https://sandbox.payfast.co.za/eng/process?merchant_id=${process.env.PAYFAST_MERCHANT_ID}
     &merchant_key=${process.env.PAYFAST_MERCHANT_KEY}
     &amount=${totalPrice}
@@ -61,6 +58,40 @@ export async function POST(
     &return_url=${encodeURIComponent(`${process.env.FRONTEND_STORE_URL}/cart?orderId=${order.id}&success=1`)}
     &cancel_url=${encodeURIComponent(`${process.env.FRONTEND_STORE_URL}/cart?canceled=1`)}`;
 
-  // Return the response with the URL
-  return NextResponse.json({ url: payFastUrl }, { headers: corsHeaders });
+      // Return the response with the URL
+     return NextResponse.json({ url: payFastUrl }, { headers: corsHeaders });
+
+  try {
+    // Make the payment request to the payment gateway
+    const response = await axios.post(payFastUrl);
+
+    // Check if the payment was successful based on the response from the payment gateway
+    if (response.data.success === true) {
+      // Update the order status to indicate that the payment was successful
+      await prismadb.order.update({
+        where: { id: order.id },
+        data: { isPaid: true }
+      });
+
+      // Return a success response to the client
+      return NextResponse.json(
+        { message: "Payment successful", url: response.data.redirectUrl },
+        { headers: corsHeaders }
+      );
+    } else {
+      // Handle unsuccessful payment (optional)
+      return NextResponse.json(
+        { message: "Payment failed", error: response.data.error },
+        { status: 400, headers: corsHeaders }
+      );
+    }
+  } catch (error: any) {
+    // Handle errors during payment processing
+    console.error("Payment failed:", error);
+    return NextResponse.json(
+      { message: "Payment failed", error: error.message },
+      { status: 500, headers: corsHeaders }
+    );
+  }
+
 }
